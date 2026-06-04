@@ -4,6 +4,7 @@ import com.th3curiosity.studycards.base.BaseApiTest;
 import com.th3curiosity.studycards.base.BaseAssertions;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
+import com.th3curiosity.studycards.data.Error;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Disabled;
@@ -64,22 +65,8 @@ public class AuthControllerTest extends BaseApiTest {
         @Test
         @DisplayName("Проверка заголовок ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
-            List<Header> expectedHeaders = List.of(
-                    new Header("X-Content-Type-Options", "nosniff"),
-                    new Header("X-XSS-Protection", "0"),
-                    new Header("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate"),
-                    new Header("Pragma", "no-cache"),
-                    new Header("X-Frame-Options", "DENY"),
-                    new Header("Expires", "0"),
-                    new Header("Content-Type", "application/json"),
-                    new Header("Date", ""),
-                    new Header("Keep-Alive", "timeout=60"),
-                    new Header("Connection", "keep-alive")
-            );
-
             Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
-
-            BaseAssertions.assertHeaders(response, expectedHeaders);
+            BaseAssertions.assertHeaders(response);
         }
 
         @Test
@@ -91,7 +78,7 @@ public class AuthControllerTest extends BaseApiTest {
             given()
                     .spec(requestSpecification)
                     .auth().oauth2(accessToken)
-                    .get("/api/users/me")
+                    .get(Endpoints.USERS)
                     .then()
                     .statusCode(200);
         }
@@ -109,7 +96,7 @@ public class AuthControllerTest extends BaseApiTest {
 
             Response response = login(notExistUsername, notExistPassword);
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -121,7 +108,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_InvalidCredentials_ShouldReturn401(String login, String password) {
             Response response = login(login, password);
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -133,7 +120,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_CredentialsIsNull_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -146,7 +133,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_WithoutKey_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -158,29 +145,16 @@ public class AuthControllerTest extends BaseApiTest {
         void login_EmptyCredentials_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @Test
         @DisplayName("Проверка заголовков ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
-            List<Header> expectedHeaders = List.of(
-                    new Header("X-Content-Type-Options", "nosniff"),
-                    new Header("X-XSS-Protection", "0"),
-                    new Header("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate"),
-                    new Header("Pragma", "no-cache"),
-                    new Header("X-Frame-Options", "DENY"),
-                    new Header("Expires", "0"),
-                    new Header("Content-Type", "application/json"),
-                    new Header("Date", ""),
-                    new Header("Keep-Alive", "timeout=60"),
-                    new Header("Connection", "keep-alive")
-            );
-
             Response response = login(AuthData.USERNAME, "invalid-password");
             BaseAssertions.assertErrorResponse(response, 401,
-                    "INVALID_USERNAME_OR_PASSWORD", "InvalidUsernameOrPassword");
-            BaseAssertions.assertHeaders(response, expectedHeaders);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+            BaseAssertions.assertHeaders(response);
         }
 
         @Disabled("Неучтённость - больше подойдёт статус-код 405")
