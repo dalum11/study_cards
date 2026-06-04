@@ -20,8 +20,9 @@ public class AuthUtils {
     }
 
     public static String generateUsername(int length) {
-        if (length <= 0) {return "";}
-        return ("user_" + System.currentTimeMillis() + ThreadLocalRandom.current()).substring(0, length - 8) + "@mail.ru";
+        if (length <= 8) {return "user_N" + "@mail.ru";}
+        String rawUsername = "user_" + System.currentTimeMillis() + ThreadLocalRandom.current();
+        return rawUsername.substring(0, length - 8) + "@mail.ru";
     }
 
     public static String generatePassword(int length) {
