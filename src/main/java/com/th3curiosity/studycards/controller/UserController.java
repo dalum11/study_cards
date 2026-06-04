@@ -46,6 +46,4 @@ public class UserController {
         User user = userService.findByUsername(userDetails.getUsername());
         return ResponseEntity.ok(userMapper.toUserResponseDto(user));
     }
-
-
 }

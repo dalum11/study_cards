@@ -15,6 +15,39 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BaseAssertions {
 
     public static void assertErrorResponse(Response response,
+                                           int expectedStatus,
+                                           String expectedError,
+                                           String expectedMessage,
+                                           String expectedPath) {
+        ResponseBody body = response.getBody();
+        String error = body.path("error");
+        String message = body.path("message");
+        String path = body.path("path");
+        Long timestamp = body.path("timestamp");
+
+        assertThat(response.getStatusCode())
+                .as("Статус-код должен быть %d", expectedStatus)
+                .isEqualTo(expectedStatus);
+
+        assertThat(error)
+                .as("Код ошибки должен быть %s", expectedError)
+                .isEqualTo(expectedError);
+
+        assertThat(message)
+                .as("Текст ошибки должен быть %s", expectedMessage)
+                .isEqualTo(expectedMessage);
+
+        assertThat(path)
+                .as("Путь должен быть %s", expectedMessage)
+                .isEqualTo(expectedPath);
+
+        assertThat(timestamp)
+                .as("Время ответа должно быть")
+                .isNotNull()
+                .isInstanceOf(Long.class);
+    }
+
+    public static void assertErrorResponse(Response response,
                                            int expectedStatusCode,
                                            String expectedErrorCode,
                                            String expectedErrorMessage) {
@@ -56,6 +89,23 @@ public class BaseAssertions {
                         .isEqualTo(expected.getValue());
             }
         }
+    }
+
+    public static void assertHeaders(Response response) {
+        List<Header> expectedHeaders = List.of(
+                new Header("X-Content-Type-Options", "nosniff"),
+                new Header("X-XSS-Protection", "0"),
+                new Header("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate"),
+                new Header("Pragma", "no-cache"),
+                new Header("X-Frame-Options", "DENY"),
+                new Header("Expires", "0"),
+                new Header("Content-Type", "application/json"),
+                new Header("Date", ""),
+                new Header("Keep-Alive", "timeout=60"),
+                new Header("Connection", "keep-alive")
+        );
+
+        assertHeaders(response, expectedHeaders);
     }
 
     public static void assertMethodNotAllowed(RequestSpecification spec, String endpoint, String wrongMethod, String... allowedMethods) {
