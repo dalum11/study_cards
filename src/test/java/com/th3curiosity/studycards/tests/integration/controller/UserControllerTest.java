@@ -1,4 +1,4 @@
-package com.th3curiosity.studycards.controller;
+package com.th3curiosity.studycards.tests.integration.controller;
 
 import com.th3curiosity.studycards.base.BaseApiTest;
 import com.th3curiosity.studycards.base.BaseAssertions;
