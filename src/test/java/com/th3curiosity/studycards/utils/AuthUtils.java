@@ -7,6 +7,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class AuthUtils {
 
+    private AuthUtils() {
+        throw new UnsupportedOperationException("Утилитный класс, создать объект нельзя");
+    }
+
     public static String encodePassword(String password) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         return encoder.encode(password);

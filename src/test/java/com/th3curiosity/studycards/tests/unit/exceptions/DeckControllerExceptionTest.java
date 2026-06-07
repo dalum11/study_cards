@@ -1,13 +1,15 @@
-package com.th3curiosity.studycards.exceptions;
+package com.th3curiosity.studycards.tests.unit.exceptions;
 
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
 import com.th3curiosity.studycards.dto.card.CardCreateRequest;
+import com.th3curiosity.studycards.exceptions.DeckNotFoundException;
 import com.th3curiosity.studycards.service.DeckService;
 import com.th3curiosity.studycards.utils.ApiUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,7 +32,7 @@ public class DeckControllerExceptionTest extends BaseExceptionTest {
     @DisplayName("Проверка обработки  ошибки DeckNotFoundException с пользовательским сообщением")
     @WithMockUser(username = "testuser")
     void handleDeckNotFound_OnlyMessage_ShouldReturn404() throws Exception {
-        doThrow(new DeckNotFoundException(Error.Message.DECK_NOT_FOUND))
+        Mockito.doThrow(new DeckNotFoundException(Error.Message.DECK_NOT_FOUND))
                 .when(deckService).getUserDecks(any(String.class));
 
         mockMvc.perform(get(Endpoints.GET_ALL_DECK)

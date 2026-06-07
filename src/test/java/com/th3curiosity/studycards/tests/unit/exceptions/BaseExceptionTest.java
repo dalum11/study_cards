@@ -1,4 +1,4 @@
-package com.th3curiosity.studycards.exceptions;
+package com.th3curiosity.studycards.tests.unit.exceptions;
 
 import com.th3curiosity.studycards.StudyCardsApplication;
 import com.th3curiosity.studycards.config.TestContainersConfig;

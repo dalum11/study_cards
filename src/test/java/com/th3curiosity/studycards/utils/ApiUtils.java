@@ -7,6 +7,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public class ApiUtils {
 
+    private ApiUtils() {
+        throw new UnsupportedOperationException("Утилитный класс, создать объект нельзя");
+    }
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
