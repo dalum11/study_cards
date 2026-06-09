@@ -141,7 +141,15 @@ public final class DeckUtils {
         return cards;
     }
 
-    private static Card createCard(int index, Deck deck) {
+    /**
+     * Метод создаёт одну карточку
+     *
+     * @param index - местоположение в колоде
+     * @param deck - колода, которой принадлежит карточка
+     * @return карточку
+     */
+
+    public static Card createCard(int index, Deck deck) {
         Card card = new Card();
         card.setDeck(deck);
         card.setFront(CARD_FRONT_PREFIX + index);

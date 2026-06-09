@@ -1,11 +1,10 @@
 package com.th3curiosity.studycards.tests.integration.controller;
 
 import com.th3curiosity.studycards.base.BaseApiTest;
-import com.th3curiosity.studycards.base.BaseAssertions;
+import com.th3curiosity.studycards.base.BaseApiAssertions;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
-import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,7 +64,7 @@ public class AuthControllerTest extends BaseApiTest {
         @DisplayName("Проверка заголовок ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
             Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
-            BaseAssertions.assertHeaders(response);
+            BaseApiAssertions.assertHeaders(response);
         }
 
         @Test
@@ -95,7 +93,7 @@ public class AuthControllerTest extends BaseApiTest {
             String notExistPassword = "not-exists-pass123";
 
             Response response = login(notExistUsername, notExistPassword);
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
@@ -107,7 +105,7 @@ public class AuthControllerTest extends BaseApiTest {
         })
         void login_InvalidCredentials_ShouldReturn401(String login, String password) {
             Response response = login(login, password);
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
@@ -119,7 +117,7 @@ public class AuthControllerTest extends BaseApiTest {
         })
         void login_CredentialsIsNull_ShouldReturn401(String authData) {
             Response response = login(authData);
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
@@ -132,7 +130,7 @@ public class AuthControllerTest extends BaseApiTest {
                 })
         void login_WithoutKey_ShouldReturn401(String authData) {
             Response response = login(authData);
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
@@ -144,7 +142,7 @@ public class AuthControllerTest extends BaseApiTest {
         })
         void login_EmptyCredentials_ShouldReturn401(String authData) {
             Response response = login(authData);
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
         }
 
@@ -152,9 +150,9 @@ public class AuthControllerTest extends BaseApiTest {
         @DisplayName("Проверка заголовков ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
             Response response = login(AuthData.USERNAME, "invalid-password");
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
-            BaseAssertions.assertHeaders(response);
+            BaseApiAssertions.assertHeaders(response);
         }
 
         @Disabled("Неучтённость - больше подойдёт статус-код 405")
@@ -162,7 +160,7 @@ public class AuthControllerTest extends BaseApiTest {
         @DisplayName("Проверка неподдерживаемых методов")
         @ValueSource(strings = {"GET", "DELETE", "PUT", "PATCH"})
         void login_MethodNotAllowed_ShouldReturn405(String wrongMethod) {
-            BaseAssertions.assertMethodNotAllowed(requestSpecification, Endpoints.LOGIN, wrongMethod, "POST");
+            BaseApiAssertions.assertMethodNotAllowed(requestSpecification, Endpoints.LOGIN, wrongMethod, "POST");
         }
 
         @Disabled("Неучтённость - ошибка 400 подходит больше")
@@ -178,7 +176,7 @@ public class AuthControllerTest extends BaseApiTest {
                     .log().all()
                     .extract().response();
 
-            BaseAssertions.assertErrorResponse(response, 400,
+            BaseApiAssertions.assertErrorResponse(response, 400,
                     "BAD_REQUEST", "Тело запроса отсутствует");
         }
 
@@ -196,7 +194,7 @@ public class AuthControllerTest extends BaseApiTest {
                     .log().all()
                     .extract().response();
 
-            BaseAssertions.assertErrorResponse(response, 400,
+            BaseApiAssertions.assertErrorResponse(response, 400,
                     "BAD_REQUEST", "Тело запроса отсутствует");
         }
     }

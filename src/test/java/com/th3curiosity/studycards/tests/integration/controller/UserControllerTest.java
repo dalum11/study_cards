@@ -1,7 +1,7 @@
 package com.th3curiosity.studycards.tests.integration.controller;
 
 import com.th3curiosity.studycards.base.BaseApiTest;
-import com.th3curiosity.studycards.base.BaseAssertions;
+import com.th3curiosity.studycards.base.BaseApiAssertions;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
@@ -62,7 +62,7 @@ public class UserControllerTest extends BaseApiTest {
         @DisplayName("Проверка заголовков ответа")
         void currentUser_CheckHeaders_AllHeadersShouldBePresent() {
             ValidatableResponse validatableResponse = getCurrentUser();
-            BaseAssertions.assertHeaders(validatableResponse.extract().response());
+            BaseApiAssertions.assertHeaders(validatableResponse.extract().response());
         }
     }
 
@@ -81,7 +81,7 @@ public class UserControllerTest extends BaseApiTest {
                     .log().all()
                     .extract().response();
 
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
         }
 
@@ -100,7 +100,7 @@ public class UserControllerTest extends BaseApiTest {
                     .log().all()
                     .extract().response();
 
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
         }
 
@@ -119,7 +119,7 @@ public class UserControllerTest extends BaseApiTest {
                     .log().all()
                     .extract().response();
 
-            BaseAssertions.assertErrorResponse(response, 401,
+            BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
         }
     }

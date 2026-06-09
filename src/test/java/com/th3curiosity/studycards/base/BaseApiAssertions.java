@@ -1,7 +1,6 @@
 package com.th3curiosity.studycards.base;
 
 import io.restassured.http.Header;
-import io.restassured.http.Method;
 import io.restassured.response.Response;
 import io.restassured.response.ResponseBody;
 import io.restassured.specification.RequestSpecification;
@@ -12,7 +11,7 @@ import java.util.List;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class BaseAssertions {
+public class BaseApiAssertions {
 
     public static void assertErrorResponse(Response response,
                                            int expectedStatus,
