@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @DataJpaTest
 @DisplayName("Тесты репозитория для работы с refreshToken")
@@ -125,6 +126,16 @@ public class RefreshTokenRepositoryTest {
                         .as("Токена не должно быть в базе")
                         .isFalse();
             }
+
+            @Test
+            @DisplayName("refreshToken - null")
+            void tokenNull_ShouldReturnFalse() {
+                boolean result = refreshTokenRepository.existsByRefreshToken(null);
+
+                assertThat(result)
+                        .as("Токена не должно быть в базе")
+                        .isFalse();
+            }
         }
     }
 
@@ -208,6 +219,14 @@ public class RefreshTokenRepositoryTest {
                         .first()
                         .extracting(RefreshToken::getRefreshToken)
                         .isEqualTo(TokenData.SUCCESS_REFRESH_TOKEN);
+            }
+
+            @Test
+            @DisplayName("Удаление токенов пользователя null не бросает исключение")
+            void deleteTokensByNullUser_DoesNotThrowsException() {
+                assertThatCode(() -> refreshTokenRepository.deleteAllByUser(null))
+                        .as("Не должно быть никакого исключения")
+                        .doesNotThrowAnyException();
             }
         }
     }
