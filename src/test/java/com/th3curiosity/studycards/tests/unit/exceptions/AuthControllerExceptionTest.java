@@ -10,7 +10,6 @@ import com.th3curiosity.studycards.utils.AuthUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -35,7 +34,7 @@ public class AuthControllerExceptionTest extends BaseExceptionTest {
     @Test
     @DisplayName("Проверка обработки исключения InvalidUsernameOrPasswordException")
     void handleWrongLoginDataException_ShouldReturn401() throws Exception {
-        Mockito.doThrow(new InvalidUsernameOrPasswordException())
+       doThrow(new InvalidUsernameOrPasswordException())
                 .when(authService).login(any(LoginRequest.class));
 
         String bodyStr = convertLoginRequestToStringJson(5, 5);
