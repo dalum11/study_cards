@@ -2,6 +2,8 @@ package com.th3curiosity.studycards.base;
 
 import com.th3curiosity.studycards.config.TestContainersConfig;
 import com.th3curiosity.studycards.data.Endpoints;
+import com.th3curiosity.studycards.dto.user.SignupRequest;
+import com.th3curiosity.studycards.utils.ApiUtils;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -54,6 +56,22 @@ public class BaseApiTest {
                 .log().all()
                 .when()
                 .post(Endpoints.LOGIN)
+                .then()
+                .log().all()
+                .extract().response();
+    }
+
+    protected Response registerUser(String username, String password) {
+        SignupRequest signupRequest = new SignupRequest();
+        signupRequest.setUsername(username);
+        signupRequest.setPassword(password);
+
+        return given()
+                .spec(requestSpecification)
+                .body(ApiUtils.toJsonStr(signupRequest))
+                .log().all()
+                .when()
+                .post(Endpoints.SIGNUP)
                 .then()
                 .log().all()
                 .extract().response();

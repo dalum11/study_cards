@@ -35,8 +35,9 @@ CREATE TABLE cards (
 
 INSERT INTO users (username, password) VALUES
                                            ('yuri-plis@example.com', '{bcrypt}$2a$10$VV.PI0mqRGM9ORD8bdtJ4OYuF9EmbzxUkw6Q07MHTRnaDAbvNMTkK'),
-                                           ('vik-nik@example.com', '$2a$10$Z.x6XKx8FvZ4qY8LqjQyMO7LqJqLqJqLqJqLqJqLqJqLqJqLqJqLq'),
-                                           ('yuri-ktsk@example.com', '$2a$10$Z.x6XKx8FvZ4qY8LqjQyMO7LqJqLqJqLqJqLqJqLqJqLqJqLqJqLq');
+                                           ('vik-nik@example.com', '{bcrypt}$2a$10$Z.x6XKx8FvZ4qY8LqjQyMO7LqJqLqJqLqJqLqJqLqJqLqJqLqJqLq'),
+                                           ('yuri-ktsk@example.com', '{bcrypt}$2a$10$1Pres0ZOLo9q.UAId8kM5eGerQTnQXRvqKiw9Ao7wVXOP2rzo7uh2'),
+                                           ('mila_B@example.com', '{bcrypt}$2a$10$Httjv9xnKcbjRG7ikhpEau1xKZTMJHVGvKJaPR7BJl2tNaJ2C221u');
 
 INSERT INTO refresh_tokens (user_id, refresh_token, expires_at) VALUES
                                                                     (1, 'test-refresh-token-for-yuri', CURRENT_TIMESTAMP + INTERVAL '7 days'),

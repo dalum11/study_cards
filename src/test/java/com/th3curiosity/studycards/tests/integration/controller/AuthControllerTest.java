@@ -27,7 +27,7 @@ public class AuthControllerTest extends BaseApiTest {
         @Test
         @DisplayName("Проверка токена при успешной авторизации")
         void login_CheckJwtToken_ReturnsJwtToken() {
-            Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
+            Response response = login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
 
             assertThat(response.statusCode()).as("Код ответа должен быть 200").isEqualTo(200);
 
@@ -47,7 +47,7 @@ public class AuthControllerTest extends BaseApiTest {
         @Test
         @DisplayName("Проверка куки в заголовках")
         void login_CheckRefreshCookie_CookieShouldPresent() {
-            Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
+            Response response = login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
 
             String cookie = response.getHeader("Set-Cookie");
 
@@ -63,14 +63,14 @@ public class AuthControllerTest extends BaseApiTest {
         @Test
         @DisplayName("Проверка заголовок ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
-            Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
+            Response response = login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
             BaseApiAssertions.assertHeaders(response);
         }
 
         @Test
         @DisplayName("Проверка работоспособности токена авторизации")
         void login_TokenCanBeUsedForAuthorization() {
-            Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
+            Response response = login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
             String accessToken = response.path("accessToken");
 
             given()
@@ -100,8 +100,8 @@ public class AuthControllerTest extends BaseApiTest {
         @ParameterizedTest
         @DisplayName("Несуществующие логин или пароль")
         @CsvSource({
-                AuthData.USERNAME + ", invalid-password",
-                "invalid-login, " + AuthData.PASSWORD
+                AuthData.USERNAME_1 + ", invalid-password",
+                "invalid-login, " + AuthData.PASSWORD_1
         })
         void login_InvalidCredentials_ShouldReturn401(String login, String password) {
             Response response = login(login, password);
@@ -112,8 +112,8 @@ public class AuthControllerTest extends BaseApiTest {
         @ParameterizedTest
         @DisplayName("Нет значения логина или пароля")
         @ValueSource(strings = {
-                "{\"username\": null, \"password\": \"" + AuthData.PASSWORD + "\"}",
-                "{\"username\": \"" + AuthData.USERNAME + "\", \"password\": null}"
+                "{\"username\": null, \"password\": \"" + AuthData.PASSWORD_1 + "\"}",
+                "{\"username\": \"" + AuthData.USERNAME_1 + "\", \"password\": null}"
         })
         void login_CredentialsIsNull_ShouldReturn401(String authData) {
             Response response = login(authData);
@@ -125,8 +125,8 @@ public class AuthControllerTest extends BaseApiTest {
         @DisplayName("Передан только логин или только пароль")
         @ValueSource(strings =
                 {
-                        "{\"username\": \"" + AuthData.USERNAME + "\"}",
-                        "{\"password\": \"" + AuthData.PASSWORD + "\"}"
+                        "{\"username\": \"" + AuthData.USERNAME_1 + "\"}",
+                        "{\"password\": \"" + AuthData.PASSWORD_1 + "\"}"
                 })
         void login_WithoutKey_ShouldReturn401(String authData) {
             Response response = login(authData);
@@ -137,8 +137,8 @@ public class AuthControllerTest extends BaseApiTest {
         @ParameterizedTest
         @DisplayName("Пустой логин или пароль")
         @ValueSource(strings = {
-                "{\"username\": \"\", \"password\": \"" + AuthData.PASSWORD + "\"}",
-                "{\"username\": \"" + AuthData.USERNAME + "\", \"password\": \"\"}"
+                "{\"username\": \"\", \"password\": \"" + AuthData.PASSWORD_1 + "\"}",
+                "{\"username\": \"" + AuthData.USERNAME_1 + "\", \"password\": \"\"}"
         })
         void login_EmptyCredentials_ShouldReturn401(String authData) {
             Response response = login(authData);
@@ -149,7 +149,7 @@ public class AuthControllerTest extends BaseApiTest {
         @Test
         @DisplayName("Проверка заголовков ответа")
         void login_CheckHeaders_AllHeadersShouldPresent() {
-            Response response = login(AuthData.USERNAME, "invalid-password");
+            Response response = login(AuthData.USERNAME_1, "invalid-password");
             BaseApiAssertions.assertErrorResponse(response, 401,
                     Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
             BaseApiAssertions.assertHeaders(response);
