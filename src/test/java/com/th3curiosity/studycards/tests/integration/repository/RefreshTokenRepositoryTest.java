@@ -78,7 +78,7 @@ public class RefreshTokenRepositoryTest {
             @DisplayName("Существуют и пользователь, и refreshToken")
             void userExists_ShouldReturnTrue() {
                 Date expiredAt = new Date(System.currentTimeMillis() + 86400000);
-                User yuri = createUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User yuri = createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 RefreshToken refreshToken = createRefreshToken(yuri, TokenData.SUCCESS_REFRESH_TOKEN, expiredAt);
 
                 boolean result = refreshTokenRepository.existsByRefreshToken(refreshToken.getRefreshToken());
@@ -90,7 +90,7 @@ public class RefreshTokenRepositoryTest {
             @DisplayName("refreshToken истёк, но находится в БД")
             void tokenExpiredButExists_ShouldReturnTrue() {
                 Date expiredAt = new Date(System.currentTimeMillis() - 86400000);
-                User yuri = createUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User yuri = createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 RefreshToken refreshToken = createRefreshToken(yuri, TokenData.SUCCESS_REFRESH_TOKEN, expiredAt);
 
                 boolean result = refreshTokenRepository.existsByRefreshToken(refreshToken.getRefreshToken());
@@ -151,7 +151,7 @@ public class RefreshTokenRepositoryTest {
             @ValueSource(ints = {1, 5, 10})
             @DisplayName("Удаление одного или нескольких токенов")
             void deleteTokensByUser_ShouldDeleteAllTokens(int tokensCount) {
-                User yuri = createUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User yuri = createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 List<RefreshToken> tokens = new ArrayList<>();
                 Date expiredAt = new Date(System.currentTimeMillis() + 86400000);
 
@@ -179,7 +179,7 @@ public class RefreshTokenRepositoryTest {
             @Test
             @DisplayName("У пользователя нет ни одного токена")
             void noTokens_ShouldDeleteNothing() {
-                User yuri = createUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User yuri = createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
 
                 assertThat(refreshTokenRepository.findByUser(yuri))
                         .as("У пользователя не должно быть токенов")
@@ -195,8 +195,8 @@ public class RefreshTokenRepositoryTest {
             @Test
             @DisplayName("Удаление токенов от другого пользователя")
             void deleteTokensByAnotherUser_ShouldDeleteNoTokens() {
-                User yuri = createUser(AuthData.USERNAME, AuthData.PASSWORD);
-                User victor = createUser("vicknick@gmail.com", AuthData.PASSWORD);
+                User yuri = createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                User victor = createUser("vicknick@gmail.com", AuthData.PASSWORD_1);
                 Date expiredAt = new Date(System.currentTimeMillis() + 86400000);
                 RefreshToken token = createRefreshToken(yuri, TokenData.SUCCESS_REFRESH_TOKEN, expiredAt);
                 entityManager.persistAndFlush(token);

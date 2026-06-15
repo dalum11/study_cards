@@ -36,7 +36,7 @@ public class UserControllerTest extends BaseApiTest {
 
         @BeforeEach
         void setUp() {
-            Response response = login(AuthData.USERNAME, AuthData.PASSWORD);
+            Response response = login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
             accessToken = response.path("accessToken");
         }
 
@@ -46,7 +46,7 @@ public class UserControllerTest extends BaseApiTest {
             getCurrentUser()
                     .statusCode(200)
                     .body("id", notNullValue())
-                    .body("username", equalTo(AuthData.USERNAME));
+                    .body("username", equalTo(AuthData.USERNAME_1));
         }
 
         @Test

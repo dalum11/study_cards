@@ -126,4 +126,23 @@ public class BaseApiAssertions {
             assertThat(allowHeader).contains(allowedMethods);
         }
     }
+
+    public static void assertMethodNotAllowed(RequestSpecification spec, String token, String endpoint, String wrongMethod, String allowedMethod) {
+        Response response = given()
+                .spec(spec)
+                .auth().oauth2(token)
+                .log().all()
+                .when()
+                .request(wrongMethod, endpoint)
+                .then()
+                .log().all()
+                .extract().response();
+
+        assertThat(response.getStatusCode())
+                .as("Статус-код должен иметь значение 405")
+                .isEqualTo(405);
+
+        String allowHeader = response.getHeader("Allow");
+        assertThat(allowHeader).isEqualTo(allowedMethod);
+    }
 }

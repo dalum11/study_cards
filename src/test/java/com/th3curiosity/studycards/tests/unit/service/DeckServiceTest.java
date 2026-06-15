@@ -72,7 +72,7 @@ public class DeckServiceTest {
             @ValueSource(ints = {1, 5, 10})
             @DisplayName("У пользователя несколько колод")
             void getUserDecks_UserAndSomeDecksFound_ShouldReturnDecks(int expectedDecksCount) {
-                User user = UserUtils.createUser(AuthData.USERNAME, AuthData.PASSWORD, expectedDecksCount);
+                User user = UserUtils.createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1, expectedDecksCount);
                 List<Deck> decks = user.getDecks();
                 List<DeckResponse> expectedResponse = DeckUtils.mapDecksToDeckResponse(decks);
                 log.info("Данные пользователя: {}, данные колоды: {}, ожидаемый ответ: {}", user, decks, expectedResponse);
@@ -102,7 +102,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("У пользователя нет ни одной колоды")
             void getUserDecks_UserWithoutDeck_ShouldReturnEmptyList() {
-                User user = UserUtils.createUser(AuthData.USERNAME, AuthData.PASSWORD, 0);
+                User user = UserUtils.createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1, 0);
                 List<Deck> decks = user.getDecks();
                 List<DeckResponse> expectedResponse = Collections.emptyList();
                 log.info("Данные пользователя: {}, данные колоды: {}, ожидаемый ответ: {}", user, decks, expectedResponse);
@@ -125,17 +125,17 @@ public class DeckServiceTest {
             @DisplayName("Пользователь не найден в системе")
             @Disabled("Баг - пользователь не найден, но другие методыы вызываютсяя")
             void getUserDecks_UserNotFound_ShouldReturnEmptyList() {
-                when(userService.findByUsername(AuthData.USERNAME)).thenReturn(null);
+                when(userService.findByUsername(AuthData.USERNAME_1)).thenReturn(null);
                 log.info("Запросы успешно замоканы");
 
-                List<DeckResponse> actualDecks = deckService.getUserDecks(AuthData.USERNAME);
+                List<DeckResponse> actualDecks = deckService.getUserDecks(AuthData.USERNAME_1);
                 log.info("Вернулись карточки: {}", actualDecks);
 
                 assertThat(actualDecks)
                         .as("У неизвестного пользователя не должно быть колод")
                         .isEmpty();
 
-                verify(userService).findByUsername(AuthData.USERNAME);
+                verify(userService).findByUsername(AuthData.USERNAME_1);
                 verify(deckRepository, never()).findByUser(any());
                 verify(deckMapper, never()).toDeckResponseList(any());
                 verifyNoMoreInteractions(userService, deckRepository, deckMapper);
@@ -206,7 +206,7 @@ public class DeckServiceTest {
                 int cardId = 1;
                 long deckId = 1;
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
-                User user = UserUtils.createUser(AuthData.USERNAME, AuthData.PASSWORD, 1);
+                User user = UserUtils.createUser(AuthData.USERNAME_1, AuthData.PASSWORD_1, 1);
                 Deck deck = user.getDecks().get(0);
                 Card card = DeckUtils.createCard(cardId, deck);
                 CardResponse expectedCardResponse = mapCardToCardResponse(card);
@@ -225,7 +225,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("Добавление карты в колоду, если в ней уже есть другие карты)")
             void addCardToDeck_AddNewCardIfAnotherCardExists_ShouldReturnCardResponse() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, cardsCountBeforeAddCard, user ).get(0);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
                 Card newCard = DeckUtils.createCard(1, deck);
@@ -245,7 +245,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("Добавление карты с дублирующимися данными в колоду")
             void addCardToDeck_AddCardWithSameData_ShouldAddCard() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, cardsCountBeforeAddCard, user ).get(0);
                 Card existingCard  = deck.getCards().get(0);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest(existingCard.getFront(),
@@ -290,7 +290,7 @@ public class DeckServiceTest {
             @DisplayName("Пользователь не существует")
             @Disabled("Неучтённость -  нет ошибки, если пользователь не найден")
             void addCardToDeck_OwnerNotExist_ShouldThrowException() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 Card card = DeckUtils.createCard(1, deck);
                 CardCreateRequest  cardCreateRequest = setupCardCreateRequest(card.getFront(), card.getBack());
@@ -312,7 +312,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("Хозяин колоды - другой пользователь")
             void  addCardToDeck_AnotherDeckOwner_ShouldThrowDeckNotFoundException() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
                 log.info("Данные пользователя: {}, данные колоды: {}, ожидаемый ответ: {}", user, deck,
@@ -331,7 +331,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("Колода не существует")
             void addCardToDeck_DeckNotExist_ShouldThrowDeckNotFoundException() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 long notExistDeckId = 9999L;
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
                 log.info("Данные пользователя: {}, ожидаемый ответ: {}", user,
@@ -352,7 +352,7 @@ public class DeckServiceTest {
             @DisplayName("Имя пользователя - null")
             @Disabled("Неучтённость - нет обработки невалидного имени пользователя")
             void addCardToDeck_NullUsername_ShouldThrowDeckNotFoundException() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 user.setUsername(null);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
@@ -372,7 +372,7 @@ public class DeckServiceTest {
             @Disabled("Неучтённость - нет обработки невалидного имени пользователя")
             @DisplayName("Имя пользователя - пустая строка и пробелы")
             void addCardToDeck_EmptyOrBlankUsername_ShouldThrowDeckNotFoundException(String username) {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 user.setUsername(username);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
@@ -390,7 +390,7 @@ public class DeckServiceTest {
             @Test
             @DisplayName("Колода с id: null")
             void addCardToDeck_NullDeckId_ShouldThrowDeckNotFoundException() {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 deck.setId(null);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
@@ -412,7 +412,7 @@ public class DeckServiceTest {
             @ValueSource(longs = {0L, -1L, -2L})
             @DisplayName("Id колоды - 0 или отрицательное число")
             void addCardToDeck_UnexpectedDeckId_ShouldThrowDeckNotFoundException(long deckId) {
-                User user = UserUtils.createBaseUser(AuthData.USERNAME, AuthData.PASSWORD);
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
                 Deck deck = DeckUtils.createDecksWithCards(1, 1, user ).get(0);
                 deck.setId(deckId);
                 CardCreateRequest cardCreateRequest = setupCardCreateRequest("front", "back");
