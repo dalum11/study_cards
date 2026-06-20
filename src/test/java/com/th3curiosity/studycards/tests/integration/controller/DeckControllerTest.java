@@ -194,7 +194,7 @@ public class DeckControllerTest extends BaseApiTest {
                         .extract().response();
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, statusCode, Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
             }
 
             @Test
@@ -206,7 +206,7 @@ public class DeckControllerTest extends BaseApiTest {
 
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, statusCode, Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
             }
 
             @Test
@@ -235,7 +235,7 @@ public class DeckControllerTest extends BaseApiTest {
 
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, statusCode, Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.GET_ALL_DECK);
             }
         }
     }
@@ -402,7 +402,7 @@ public class DeckControllerTest extends BaseApiTest {
                 Response response = sendCreateDeckRequest(accessToken, deckCreateRequest);
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.BAD_REQUEST.value(), Error.Code.BAD_REQUEST,
-                        Error.Message.BAD_REQUEST, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.BAD_REQUEST, Endpoints.ADD_DECK);
             }
 
             @Test
@@ -423,7 +423,7 @@ public class DeckControllerTest extends BaseApiTest {
 
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.BAD_REQUEST.value(), Error.Code.BAD_REQUEST,
-                        Error.Message.BAD_REQUEST, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.BAD_REQUEST, Endpoints.ADD_DECK);
             }
 
             @ParameterizedTest
@@ -446,7 +446,7 @@ public class DeckControllerTest extends BaseApiTest {
 
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.ADD_DECK);
             }
 
             @ParameterizedTest
@@ -461,7 +461,7 @@ public class DeckControllerTest extends BaseApiTest {
 
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.ADD_DECK);
             }
 
             @Test
@@ -475,7 +475,7 @@ public class DeckControllerTest extends BaseApiTest {
                 Response response = sendCreateDeckRequest(expiredToken, deckCreateRequest);
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.ADD_DECK);
             }
 
             @Test
@@ -489,7 +489,7 @@ public class DeckControllerTest extends BaseApiTest {
                 Response response = sendCreateDeckRequest(invalidToken, deckCreateRequest);
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
-                        Error.Message.UNAUTHORIZED, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.ADD_DECK);
             }
 
             @ParameterizedTest
@@ -505,7 +505,7 @@ public class DeckControllerTest extends BaseApiTest {
                 Response response = sendCreateDeckRequest(accessToken, deckCreateRequest);
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.BAD_REQUEST.value(), Error.Code.BAD_REQUEST,
-                        Error.Message.BAD_REQUEST, Endpoints.ADD_DECK);
+                        Error.ResponseMessage.BAD_REQUEST, Endpoints.ADD_DECK);
             }
         }
     }

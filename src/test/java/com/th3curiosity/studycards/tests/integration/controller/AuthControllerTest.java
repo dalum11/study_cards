@@ -94,7 +94,7 @@ public class AuthControllerTest extends BaseApiTest {
 
             Response response = login(notExistUsername, notExistPassword);
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -106,7 +106,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_InvalidCredentials_ShouldReturn401(String login, String password) {
             Response response = login(login, password);
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -118,7 +118,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_CredentialsIsNull_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -131,7 +131,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_WithoutKey_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @ParameterizedTest
@@ -143,7 +143,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_EmptyCredentials_ShouldReturn401(String authData) {
             Response response = login(authData);
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
         }
 
         @Test
@@ -151,7 +151,7 @@ public class AuthControllerTest extends BaseApiTest {
         void login_CheckHeaders_AllHeadersShouldPresent() {
             Response response = login(AuthData.USERNAME_1, "invalid-password");
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.Message.INVALID_USERNAME_OR_PASSWORD);
+                    Error.Code.INVALID_USERNAME_OR_PASSWORD, Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD);
             BaseApiAssertions.assertHeaders(response);
         }
 
