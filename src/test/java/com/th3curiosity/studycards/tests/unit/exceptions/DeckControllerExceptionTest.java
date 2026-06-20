@@ -32,7 +32,7 @@ public class DeckControllerExceptionTest extends BaseExceptionTest {
     @DisplayName("Проверка обработки  ошибки DeckNotFoundException с пользовательским сообщением")
     @WithMockUser(username = "testuser")
     void handleDeckNotFound_OnlyMessage_ShouldReturn404() throws Exception {
-        Mockito.doThrow(new DeckNotFoundException(Error.Message.DECK_NOT_FOUND))
+        Mockito.doThrow(new DeckNotFoundException(Error.ResponseMessage.DECK_NOT_FOUND))
                 .when(deckService).getUserDecks(any(String.class));
 
         mockMvc.perform(get(Endpoints.GET_ALL_DECK)
@@ -40,7 +40,7 @@ public class DeckControllerExceptionTest extends BaseExceptionTest {
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(Error.Code.DECK_NOT_FOUND))
-                .andExpect(jsonPath("$.message").value(Error.Message.DECK_NOT_FOUND));
+                .andExpect(jsonPath("$.message").value(Error.ResponseMessage.DECK_NOT_FOUND));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class DeckControllerExceptionTest extends BaseExceptionTest {
     @Disabled("Не обрабатываетсяя неожиданнаяя  ошибка")
     @WithMockUser(username = "testuser")
     void handleUnexpectedError_ShouldReturn500() throws Exception {
-        doThrow(new RuntimeException(Error.Message.INTERNAL_SERVER_ERROR))
+        doThrow(new RuntimeException(Error.ResponseMessage.INTERNAL_SERVER_ERROR))
                 .when(deckService).getUserDecks(anyString());
 
         mockMvc.perform(get(Endpoints.GET_ALL_DECK)
@@ -80,6 +80,6 @@ public class DeckControllerExceptionTest extends BaseExceptionTest {
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value(Error.Code.INTERNAL_SERVER_ERROR))
-                .andExpect(jsonPath("$.message").value(Error.Message.INTERNAL_SERVER_ERROR));
+                .andExpect(jsonPath("$.message").value(Error.ResponseMessage.INTERNAL_SERVER_ERROR));
     }
 }

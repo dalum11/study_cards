@@ -82,7 +82,7 @@ public class UserControllerTest extends BaseApiTest {
                     .extract().response();
 
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
+                    Error.Code.UNAUTHORIZED, Error.ResponseMessage.UNAUTHORIZED, Endpoints.USERS);
         }
 
         @Test
@@ -101,7 +101,7 @@ public class UserControllerTest extends BaseApiTest {
                     .extract().response();
 
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
+                    Error.Code.UNAUTHORIZED, Error.ResponseMessage.UNAUTHORIZED, Endpoints.USERS);
         }
 
         @Test
@@ -120,7 +120,7 @@ public class UserControllerTest extends BaseApiTest {
                     .extract().response();
 
             BaseApiAssertions.assertErrorResponse(response, 401,
-                    Error.Code.UNAUTHORIZED, Error.Message.UNAUTHORIZED, Endpoints.USERS);
+                    Error.Code.UNAUTHORIZED, Error.ResponseMessage.UNAUTHORIZED, Endpoints.USERS);
         }
     }
 }

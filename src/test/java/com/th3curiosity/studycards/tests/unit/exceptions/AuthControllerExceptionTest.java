@@ -45,7 +45,7 @@ public class AuthControllerExceptionTest extends BaseExceptionTest {
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(Error.Code.INVALID_USERNAME_OR_PASSWORD))
-                .andExpect(jsonPath("$.message").value(Error.Message.INVALID_USERNAME_OR_PASSWORD));
+                .andExpect(jsonPath("$.message").value(Error.ResponseMessage.INVALID_USERNAME_OR_PASSWORD));
     }
 
     @Test
@@ -63,6 +63,6 @@ public class AuthControllerExceptionTest extends BaseExceptionTest {
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value(Error.Code.INTERNAL_SERVER_ERROR))
-                .andExpect(jsonPath("$.message").value(Error.Message.INTERNAL_SERVER_ERROR));
+                .andExpect(jsonPath("$.message").value(Error.ResponseMessage.INTERNAL_SERVER_ERROR));
     }
 }
