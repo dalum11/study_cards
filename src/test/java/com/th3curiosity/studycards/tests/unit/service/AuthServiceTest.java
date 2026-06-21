@@ -3,6 +3,7 @@ package com.th3curiosity.studycards.tests.unit.service;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
+import com.th3curiosity.studycards.data.SuccessData;
 import com.th3curiosity.studycards.dto.other.AuthResult;
 import com.th3curiosity.studycards.dto.user.LoginRequest;
 import com.th3curiosity.studycards.entity.User;
@@ -240,9 +241,6 @@ public class AuthServiceTest {
     @DisplayName("Тесты для разлогина пользователя")
     class Logout {
 
-        private static final String LOGOUT_ALL = "all";
-        private static final String LOGOUT_CURRENT = "current";
-
         private void assertAuthResult(AuthResult authResult, String message, boolean isSuccessful) {
             assertThat(authResult.isSuccess())
                     .as("Должен быть успешный разлогин")
@@ -269,8 +267,6 @@ public class AuthServiceTest {
         @DisplayName("Успешный разлогин пользователя")
         class LogoutSuccessful {
 
-            private static final String LOGOUT_SUCCESSFUL = "Logout complete successfully";
-
             @Test
             @DisplayName("Пользователь успешно разлогинен на всех устройствах")
             void logout_logoutAll_ShouldLogoutSuccessful() {
@@ -281,9 +277,9 @@ public class AuthServiceTest {
                 mockLogoutResponse(user, refreshToken);
                 doNothing().when(refreshTokensService).deleteAllRefreshTokens(user);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
 
-                assertAuthResult(actualResult, LOGOUT_SUCCESSFUL, true);
+                assertAuthResult(actualResult, SuccessData.AuthMessage.SUCCESS_LOGOUT, true);
             }
 
             @Test
@@ -296,9 +292,9 @@ public class AuthServiceTest {
                 mockLogoutResponse(user, refreshToken);
                 doNothing().when(refreshTokensService).deleteRefreshToken(user, refreshToken);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_CURRENT);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT);
 
-                assertAuthResult(actualResult, LOGOUT_SUCCESSFUL, true);
+                assertAuthResult(actualResult, SuccessData.AuthMessage.SUCCESS_LOGOUT, true);
             }
 
             @ParameterizedTest
@@ -312,9 +308,9 @@ public class AuthServiceTest {
                 mockLogoutResponse(user, refreshToken);
                 doNothing().when(refreshTokensService).deleteRefreshToken(user, refreshToken);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_CURRENT);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT);
 
-                assertAuthResult(actualResult, LOGOUT_SUCCESSFUL, true);
+                assertAuthResult(actualResult, SuccessData.AuthMessage.SUCCESS_LOGOUT, true);
             }
         }
 
@@ -408,7 +404,7 @@ public class AuthServiceTest {
 
                 when(jwtUtils.validateToken(invalidToken)).thenReturn(false);
 
-                AuthResult actualResult = authService.logout(invalidToken, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(invalidToken, SuccessData.LogoutType.LOGOUT_ALL);
 
                 assertAuthResult(actualResult, Error.ServiceMessage.INVALID_REFRESH_TOKEN, false);
                 verifyNoInteractionsAfterValidateToken();
@@ -420,7 +416,7 @@ public class AuthServiceTest {
             void logout_EmptyOrBlankRefreshToken_ShouldReturnAuthResultFalse(String refreshToken) {
                 when(jwtUtils.validateToken(refreshToken)).thenReturn(false);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
 
                 assertAuthResult(actualResult, Error.ServiceMessage.INVALID_REFRESH_TOKEN, false);
                 verifyNoInteractionsAfterValidateToken();
@@ -429,7 +425,7 @@ public class AuthServiceTest {
             @Test
             @DisplayName("RefreshToken - null")
             void logout_NullRefreshToken_ShouldReturnAuthResultFalse() {
-                AuthResult actualResult = authService.logout(null, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(null, SuccessData.LogoutType.LOGOUT_ALL);
 
                 assertAuthResult(actualResult, Error.ServiceMessage.INVALID_REFRESH_TOKEN, false);
                 verifyNoInteractionsAfterValidateToken();
@@ -444,7 +440,7 @@ public class AuthServiceTest {
                 when(jwtUtils.getUsernameFromToken(refreshToken)).thenReturn(null);
                 when(refreshTokensService.isRefreshTokenInWhiteList(null, refreshToken)).thenReturn(false);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
 
                 assertAuthResult(actualResult, Error.ServiceMessage.INVALID_REFRESH_TOKEN, false);
                 verify(jwtUtils).getUsernameFromToken(refreshToken);
@@ -463,7 +459,7 @@ public class AuthServiceTest {
                 String refreshToken = AuthUtils.generateRefreshToken(username);
 
                 when(jwtUtils.validateToken(refreshToken)).thenReturn(true);
-                assertThatThrownBy(() -> authService.logout(refreshToken, LOGOUT_ALL))
+                assertThatThrownBy(() -> authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL))
                         .as("Должно быть брошено " + IllegalArgumentException.class.getName())
                         .isInstanceOf(IllegalArgumentException.class);
             }
@@ -480,7 +476,7 @@ public class AuthServiceTest {
                 when(userService.findByUsername(username)).thenReturn(user);
                 when(refreshTokensService.isRefreshTokenInWhiteList(any(), any())).thenReturn(false);
 
-                AuthResult actualResult = authService.logout(refreshToken, LOGOUT_ALL);
+                AuthResult actualResult = authService.logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
 
                 assertAuthResult(actualResult, Error.ServiceMessage.INVALID_REFRESH_TOKEN, false);
 
