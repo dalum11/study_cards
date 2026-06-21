@@ -10,21 +10,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: studycards_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U test_user"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,10 +33,6 @@ jobs:
           sleep 10
           chmod +x ./mvnw
           ./mvnw clean test \
-            -Dspring.datasource.url=jdbc:postgresql://localhost:5432/studycards_test \
-            -Dspring.datasource.username=test_user \
-            -Dspring.datasource.password=test_password \
-            -Dtestcontainers.reuse.enable=false
         env:
           SPRING_PROFILES_ACTIVE: test
 
