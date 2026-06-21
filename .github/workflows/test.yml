@@ -45,6 +45,7 @@ jobs:
 
       - name: Run tests
         run: |
+          chmod +x ./mvnw
           ./mvnw clean test \
             -Dspring.datasource.url=jdbc:postgresql://localhost:5432/studycards_test \
             -Dspring.datasource.username=test_user \
