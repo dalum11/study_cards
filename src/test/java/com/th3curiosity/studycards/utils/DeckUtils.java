@@ -1,5 +1,6 @@
 package com.th3curiosity.studycards.utils;
 
+import com.th3curiosity.studycards.dto.card.CardCreateRequest;
 import com.th3curiosity.studycards.dto.deck.DeckResponse;
 import com.th3curiosity.studycards.entity.Card;
 import com.th3curiosity.studycards.entity.Deck;
@@ -155,5 +156,12 @@ public final class DeckUtils {
         card.setFront(CARD_FRONT_PREFIX + index);
         card.setBack(CARD_BACK_PREFIX + index);
         return card;
+    }
+
+    public static CardCreateRequest createCardCreateRequest(String front, String back) {
+        CardCreateRequest cardCreateRequest = new CardCreateRequest();
+        cardCreateRequest.setFront(front);
+        cardCreateRequest.setBack(back);
+        return cardCreateRequest;
     }
 }

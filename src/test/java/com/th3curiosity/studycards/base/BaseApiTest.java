@@ -76,4 +76,22 @@ public class BaseApiTest {
                 .log().all()
                 .extract().response();
     }
+
+    protected Response logout(String refreshToken, String logoutType, String endpoint) {
+        return given()
+                .spec(requestSpecification)
+                .cookie("refreshToken", refreshToken)
+                .queryParam("type", logoutType)
+                .log().all()
+                .when()
+                .post(endpoint)
+                .then()
+                .contentType(ContentType.TEXT)
+                .log().all()
+                .extract().response();
+    }
+
+    protected String getExpiredToken(String username, String password, String endpoint) {
+        return logout(username, password, endpoint).body().asString();
+    }
 }
