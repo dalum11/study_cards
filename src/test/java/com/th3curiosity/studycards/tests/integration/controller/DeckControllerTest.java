@@ -5,9 +5,12 @@ import com.th3curiosity.studycards.base.BaseApiTest;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
+import com.th3curiosity.studycards.dto.card.CardCreateRequest;
+import com.th3curiosity.studycards.dto.card.CardResponse;
 import com.th3curiosity.studycards.dto.deck.DeckCreateRequest;
 import com.th3curiosity.studycards.dto.deck.DeckResponse;
 import com.th3curiosity.studycards.utils.AuthUtils;
+import com.th3curiosity.studycards.utils.DeckUtils;
 import com.th3curiosity.studycards.utils.TestDataHelper;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
@@ -28,6 +31,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -506,6 +511,481 @@ public class DeckControllerTest extends BaseApiTest {
                 BaseApiAssertions.assertHeaders(response);
                 BaseApiAssertions.assertErrorResponse(response, HttpStatus.BAD_REQUEST.value(), Error.Code.BAD_REQUEST,
                         Error.ResponseMessage.BAD_REQUEST, Endpoints.ADD_DECK);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Тесты для эндпоинта добавления новой карты в колоду")
+    class AddCard {
+
+        private Response addCard(String token, Long deckId, CardCreateRequest cardCreateRequest)  {
+            return given()
+                    .spec(requestSpecification)
+                    .auth().oauth2(token)
+                    .body(cardCreateRequest)
+                    .log().all()
+                    .when()
+                    .post(Endpoints.buildAddCardEndpoint(deckId))
+                    .then()
+                    .log().all()
+                    .extract().response();
+        }
+
+
+        @Nested
+        @DisplayName("Успешное добавление новой карты в колоду")
+        class AddCardSuccessful {
+
+            private void assertCardResponseSuccess(Response response, String cardFront, String cardBack) {
+                BaseApiAssertions.assertHeaders(response);
+                assertThat(response.getStatusCode())
+                        .as("Статус-код ответа должен быть %d", 200)
+                        .isEqualTo(200);
+
+                CardResponse cardResponse = response.as(CardResponse.class);
+                assertThat(cardResponse)
+                        .as("Созданная карта должна быть заполнена данными")
+                        .isNotNull();
+                assertThat(cardResponse.getId())
+                        .as("Id должен быть больше 0")
+                        .isNotNull()
+                        .isPositive();
+                assertThat(cardResponse.getFront())
+                        .as("Вопрос на карте должен быть %s", cardFront)
+                        .isNotBlank()
+                        .isEqualTo(cardFront);
+                assertThat(cardResponse.getBack())
+                        .as("Ответ на карте должен быть %s", cardBack)
+                        .isNotBlank()
+                        .isEqualTo(cardBack);
+            }
+
+            @Test
+            @DisplayName("Добавление карты в пустую колоду")
+            void addCard_AddCardInEmptyDeck_ShouldReturn200() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                assertCardResponseSuccess(response, cardFront, cardBack);
+            }
+
+            @Test
+            @DisplayName("Добавление карты в колоду, где карты уже есть")
+            void addCard_AddInDeckWithCards_ShouldReturn200() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response1 = addCard(token, deckId, cardCreateRequest);
+
+                assertCardResponseSuccess(response1, cardFront, cardBack);
+
+                Response response2 = addCard(token, deckId, cardCreateRequest);
+
+                assertCardResponseSuccess(response2, cardFront, cardBack);
+            }
+
+            @ParameterizedTest
+            @DisplayName("Проверка текта вопроса на карте")
+            @CsvSource({
+                    "AAAAAAAAAAAAAAAAA",
+                    "ababababababababa",
+                    "AbAbAbAbAbAbAbAb",
+                    "Name whitespace",
+                    "   Trim Name  ",
+                    "#@$#^$(&^%&*^%(",
+                    "1234567890",
+                    "Name, what have a signs!?",
+                    "Русский вопрос",
+                    "中文提問",
+                    "سؤال باللغة العربية"
+            })
+            void addCard_DifferentCardFronts_ShouldReturn200(String cardFront) {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                assertCardResponseSuccess(response, cardFront, cardBack);
+            }
+
+            @ParameterizedTest
+            @DisplayName("Проверка текста ответа на карте")
+            @CsvSource({
+                    "AAAAAAAAAAAAAAAAA",
+                    "ababababababababa",
+                    "AbAbAbAbAbAbAbAb",
+                    "Back whitespace",
+                    "   Trim Back  ",
+                    "#@$#^$(&^%&*^%(",
+                    "1234567890",
+                    "Back, what have a signs!?",
+                    "Русский ответ",
+                    "中文提問",
+                    "سؤال باللغة العربية"
+            })
+            void addCard_DifferentCardBacks_ShouldReturn200(String cardBack) {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                assertCardResponseSuccess(response, cardFront, cardBack);
+            }
+
+            @Test
+            @DisplayName("Добавление карты в колоду, где уже много карт")
+            void addCard_ToDeckWithManyCards_ShouldReturn200() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+
+                for (int i = 0; i < 100; i++) {
+                    CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(
+                            "Front " + i, "Back " + i
+                    );
+                    addCard(token, deckId, cardCreateRequest);
+                }
+
+                CardCreateRequest newCard = DeckUtils.createCardCreateRequest("New", "Card");
+                Response response = addCard(token, deckId, newCard);
+
+                assertCardResponseSuccess(response, "New", "Card");
+            }
+
+            @Test
+            @DisplayName("Карта содержит все поля, которые должны быть")
+            void addCard_CardResponse_ShouldHaveAllFields() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                CardResponse card = response.as(CardResponse.class);
+
+                assertThat(card)
+                        .as("Поля ДТО карты должны быть заполнены")
+                        .hasNoNullFieldsOrProperties()
+                        .extracting(CardResponse::getId, CardResponse::getFront, CardResponse::getBack)
+                        .doesNotContainNull();
+            }
+        }
+
+        @Nested
+        @DisplayName("Неуспешное добавление карты в колоду")
+        class AddCardError {
+
+            private void assertAddCardError(Response response, int status, String message) {
+                assertThat(response)
+                        .as("Ответ не должен быть null")
+                        .isNotNull();
+                assertThat(response.getStatusCode())
+                        .as("Статус-код должен быть %d", status)
+                        .isEqualTo(status);
+                assertThat(response.getBody().asString())
+                        .as("Сообщение должно содержать %s", message)
+                        .isNotNull()
+                        .contains(message);
+            }
+
+            @Test
+            @DisplayName("В запросе не передан id колоды")
+            void addCard_RequestWithoutId_ShouldReturn400() {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = given()
+                        .spec(requestSpecification)
+                        .auth().oauth2(token)
+                        .body(cardCreateRequest)
+                        .log().all()
+                        .when()
+                        .post(Endpoints.ADD_DECK + "/" + "/add-card")
+                        .then()
+                        .log().all()
+                        .extract().response();
+
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @Test
+            @DisplayName("Добавление карты в несуществующую колоду")
+            void addCard_NotExistingDeck_ShouldReturn404() {
+                Long notExistsDeckId = 999L;
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, notExistsDeckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.NOT_FOUND.value(), Error.Code.DECK_NOT_FOUND,
+                        String.format(Error.ResponseMessage.DECK_NOT_FOUND_BY_USER, notExistsDeckId, AuthData.USERNAME_1));
+            }
+
+            @ParameterizedTest
+            @DisplayName("Id колоды меньше чем 0")
+            @ValueSource(longs = {0, -1, -2, Long.MAX_VALUE})
+            void addCard_DeckIdLessOrEqualThan0_ShouldReturn404(long deckId) {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.NOT_FOUND.value(), Error.Code.DECK_NOT_FOUND,
+                        String.format(Error.ResponseMessage.DECK_NOT_FOUND_BY_USER, deckId, AuthData.USERNAME_1));
+            }
+
+            @Test
+            @DisplayName("Очень большой id колоды")
+            void addCard_TooLongDeckId_ShouldReturn404() {
+                Long tooLongDeckId = Long.MAX_VALUE;
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(token, tooLongDeckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.NOT_FOUND.value(), Error.Code.DECK_NOT_FOUND,
+                        String.format(Error.ResponseMessage.DECK_NOT_FOUND_BY_USER, tooLongDeckId, AuthData.USERNAME_1));
+            }
+
+            @Test
+            @DisplayName("Запрос для создания карты пустой")
+            @Disabled("Неучтённость - лучше вернуть ответ 400")
+            void addCard_NullCreateCardRequest_ShouldReturn400() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+
+                Response response = addCard(token, deckId, new CardCreateRequest());
+
+                BaseApiAssertions.assertHeaders(response);
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @Test
+            @DisplayName("Карта без вопроса")
+            @Disabled("Неучтённость - лучше вернуть ответ 400")
+            void addCard_NullFront_ShouldReturn400() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                String cardBack = TestDataHelper.generateRandomString(8);
+                CardCreateRequest cardCreateRequest = new CardCreateRequest();
+                cardCreateRequest.setBack(cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @Test
+            @DisplayName("Карта без ответа")
+            @Disabled("Неучтённость - лучше вернуть ответ 400")
+            void addCard_NullBack_ShouldReturn400() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                String cardFront = TestDataHelper.generateRandomString(8);
+                CardCreateRequest cardCreateRequest = new CardCreateRequest();
+                cardCreateRequest.setFront(cardFront);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @ParameterizedTest
+            @DisplayName("Вопрос на карте пустой или из пробелов")
+            @Disabled("Неучтённость - лучше сделать валидацию cardCreateRequest")
+            @ValueSource(strings = {"", " ", "  "})
+            void addCard_EmptyOrBlankFront_ShouldReturn400(String front) {
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(front, cardBack);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @ParameterizedTest
+            @DisplayName("Ответ на карте пустой или с пробелами")
+            @Disabled("Неучтённость - лучше сделать валидацию cardCreateRequest")
+            @ValueSource(strings = {"", " ", "  "})
+            void addCard_EmptyOrBlankBack_ShouldReturn400(String back) {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, back);
+
+                Response response = addCard(token, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                assertAddCardError(response, HttpStatus.BAD_REQUEST.value(), "Status 400 – Bad Request");
+            }
+
+            @Test
+            @DisplayName("Нет токена доступа")
+            void addCard_RequestWithoutToken_ShouldReturn401() {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = given()
+                        .spec(requestSpecification)
+                        .body(cardCreateRequest)
+                        .log().all()
+                        .when().post(Endpoints.buildAddCardEndpoint(deckId))
+                        .then()
+                        .log().all()
+                        .extract().response();
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.buildAddCardEndpoint(deckId));
+            }
+
+            @Test
+            @DisplayName("Токен доступа истёк")
+            void addCard_RequestWithExpiredToken_ShouldReturn401() {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                String expiredToken = getExpiredToken(AuthData.USERNAME_1, AuthData.PASSWORD_1, Endpoints.LOGOUT_ALL);
+                Response response = addCard(expiredToken, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.buildAddCardEndpoint(deckId));
+            }
+
+            @Test
+            @DisplayName("Невалидный токен доступа")
+            void addCard_InvalidToken_ShouldReturn401() {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+                String invalidToken = "invalidToken";
+
+                Response response = addCard(invalidToken, deckId, cardCreateRequest);
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.UNAUTHORIZED.value(), Error.Code.UNAUTHORIZED,
+                        Error.ResponseMessage.UNAUTHORIZED, Endpoints.buildAddCardEndpoint(deckId));
+            }
+
+            @Test
+            @DisplayName("Токен доступа от другого пользователя")
+            void addCard_RequestWithAnotherUserToken_ShouldReturn404() {
+                String cardFront = TestDataHelper.generateRandomString(8);
+                String cardBack = TestDataHelper.generateRandomString(8);
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String firstUserToken = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                String secondUserToken = getAccessToken(AuthData.USERNAME_2, AuthData.PASSWORD_2);
+                Long deckId = createTestDeck(firstUserToken, deckTitle, deckDescription).getId();
+                CardCreateRequest cardCreateRequest = DeckUtils.createCardCreateRequest(cardFront, cardBack);
+
+                Response response = addCard(secondUserToken, deckId, cardCreateRequest);
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.NOT_FOUND.value(), Error.Code.DECK_NOT_FOUND,
+                        String.format(Error.ResponseMessage.DECK_NOT_FOUND_BY_USER, deckId, AuthData.USERNAME_2));
+            }
+
+            @ParameterizedTest
+            @DisplayName("Неподдерживаемый метод")
+            @Disabled("Неучтённость - лучше вернуть 405")
+            @ValueSource(strings = {"GET", "DELETE", "PUT", "PATCH"})
+            void addCard_WrongMethod_ShouldReturn405(String method) {
+                BaseApiAssertions.assertMethodNotAllowed(requestSpecification, Endpoints.buildAddCardEndpoint(1L),
+                        method, "POST");
+            }
+
+            @Test
+            @DisplayName("Пустое тело запроса")
+            @Disabled("Неучтённость - лучше вернуть 400")
+            void addCard_EmptyBody_ShouldReturn400() {
+                String deckTitle = TestDataHelper.generateRandomString(10);
+                String deckDescription = TestDataHelper.generateRandomString(10);
+                String token = getAccessToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Long deckId = createTestDeck(token, deckTitle, deckDescription).getId();
+
+                Response response = given()
+                        .spec(requestSpecification)
+                        .auth().oauth2(token)
+                        .log().all()
+                        .with().post(Endpoints.buildAddCardEndpoint(deckId))
+                        .then()
+                        .log().all()
+                        .extract().response();
+
+                BaseApiAssertions.assertHeaders(response);
+                BaseApiAssertions.assertErrorResponse(response, HttpStatus.BAD_REQUEST.value(), Error.Code.BAD_REQUEST,
+                        Error.ResponseMessage.BAD_REQUEST);
             }
         }
     }

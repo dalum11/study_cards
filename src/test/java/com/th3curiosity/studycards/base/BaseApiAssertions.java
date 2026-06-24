@@ -1,9 +1,11 @@
 package com.th3curiosity.studycards.base;
 
+import com.th3curiosity.studycards.data.Error;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.restassured.response.ResponseBody;
 import io.restassured.specification.RequestSpecification;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -144,5 +146,17 @@ public class BaseApiAssertions {
 
         String allowHeader = response.getHeader("Allow");
         assertThat(allowHeader).isEqualTo(allowedMethod);
+    }
+
+    public static void assertTextError(Response response, int statusCode, String expectedMessage) {
+        assertThat(response.statusCode())
+                .as("Должен вернуться ответ %d", statusCode)
+                .isEqualTo(statusCode);
+
+        String message = response.body().asString();
+        assertThat(message)
+                .as("Сообщение должно быть %s", expectedMessage)
+                .isNotBlank()
+                .isEqualTo(expectedMessage);
     }
 }

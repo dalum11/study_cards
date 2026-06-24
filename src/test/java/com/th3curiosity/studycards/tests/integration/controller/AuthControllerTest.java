@@ -212,19 +212,6 @@ public class AuthControllerTest extends BaseApiTest {
         }
     }
 
-    private Response logout(String refreshToken, String logoutType) {
-        return given()
-                .spec(requestSpecification)
-                .cookie("refreshToken", refreshToken)
-                .queryParam("type", logoutType)
-                .log().all()
-                .when()
-                .post(Endpoints.LOGOUT_ALL)
-                .then()
-                .contentType(ContentType.TEXT)
-                .log().all()
-                .extract().response();
-    }
 
     private void assertHeaders(Response response) {
         List<Header> expectedHeaders = List.of(
@@ -268,7 +255,7 @@ public class AuthControllerTest extends BaseApiTest {
             @DisplayName("Разлогин с валидным токеном")
             void logout_ValidToken_ShouldReturn200() {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
-                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
                 String message = logoutResult.body().asString();
@@ -297,7 +284,7 @@ public class AuthControllerTest extends BaseApiTest {
                         .as("Не должно быть дублей")
                         .doesNotHaveDuplicates();
 
-                Response logoutResult = logout(refreshTokens.get(0), SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(refreshTokens.get(0), SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
 
@@ -315,15 +302,11 @@ public class AuthControllerTest extends BaseApiTest {
             @DisplayName("Токен невалиден")
             void logout_InvalidToken_ShouldReturn401() {
                 String refreshToken = "invalid-token";
-                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-
-                String message = logoutResult.body().asString();
-                assertThat(message)
-                        .as("Сообщение должно быть %s")
-                        .isNotBlank()
-                        .isEqualTo(Error.ServiceMessage.INVALID_REFRESH_TOKEN);
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
             }
 
             @Test
@@ -334,11 +317,11 @@ public class AuthControllerTest extends BaseApiTest {
 
                 String expiredRefreshToken = AuthUtils.generateExpiredToken(AuthData.USERNAME_1);
 
-                Response logoutResponse = logout(expiredRefreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResponse = logout(expiredRefreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
+
                 assertHeaders(logoutResponse);
-                assertThat(logoutResponse.statusCode())
-                        .as("Logout с истекшим токеном должен вернуть 401")
-                        .isEqualTo(HttpStatus.UNAUTHORIZED.value());
+                BaseApiAssertions.assertTextError(logoutResponse, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
 
                 tryRefreshSessionWithRefreshToken(expiredRefreshToken);
             }
@@ -347,12 +330,11 @@ public class AuthControllerTest extends BaseApiTest {
             @DisplayName("Токен неизвестен (null)")
             @Disabled("Неучтённость - больше подошла бы ошибка 400")
             void logout_NullRefreshToken_ShouldReturn400() {
-                Response logoutResult = logout(null, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(null, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout с null токеном должен вернуть 400")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @Test
@@ -361,18 +343,11 @@ public class AuthControllerTest extends BaseApiTest {
                 String accessToken = AuthUtils.generateAccessToken(AuthData.USERNAME_1);
                 login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
 
-                Response logoutResult = logout(accessToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(accessToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Должен вернуться ответ 401")
-                        .isEqualTo(HttpStatus.UNAUTHORIZED.value());
-
-                String message = logoutResult.body().asString();
-                assertThat(message)
-                        .as("Сообщение должно быть %s", Error.ServiceMessage.INVALID_REFRESH_TOKEN)
-                        .isNotBlank()
-                        .isEqualTo(Error.ServiceMessage.INVALID_REFRESH_TOKEN);
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
             }
 
             @ParameterizedTest
@@ -380,12 +355,11 @@ public class AuthControllerTest extends BaseApiTest {
             @ValueSource(strings = {"", " ", "  "})
             @Disabled("Неучтённость - возвращается 401")
             void logout_EmptyOrBlankRefreshToken(String refreshToken) {
-                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout с пустым токеном должен вернуть 400")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @ParameterizedTest
@@ -394,12 +368,11 @@ public class AuthControllerTest extends BaseApiTest {
             @ValueSource(strings = {"alll", "al", "1234567890", "!@#$"})
             void logout_UnexpectedLogoutType_ShouldReturn400(String logoutType) {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
-                Response logoutResult = logout(refreshToken, logoutType);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout с необрабатываемым типом должен вернуть 400")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @ParameterizedTest
@@ -408,12 +381,11 @@ public class AuthControllerTest extends BaseApiTest {
             @ValueSource(strings = {"AlL", "aLl", "ALl", "aLL"})
             void logout_LogoutTypeDifferentCases_ShouldReturn400(String logoutType) {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
-                Response logoutResult = logout(refreshToken, logoutType);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout должен учитывать регистр")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @Test
@@ -421,12 +393,11 @@ public class AuthControllerTest extends BaseApiTest {
             @DisplayName("Тип разлогина - null")
             void logout_NullLogoutType_ShouldReturn400() {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
-                Response logoutResult = logout(refreshToken, null);
+                Response logoutResult = logout(refreshToken, null, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout с типом null должен возвращать 400")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @ParameterizedTest
@@ -435,12 +406,11 @@ public class AuthControllerTest extends BaseApiTest {
             @ValueSource(strings = {"", " ", "  "})
             void logout_EmptyOrBlankLogoutType_ShouldReturn400(String logoutType) {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
-                Response logoutResult = logout(refreshToken, logoutType);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                assertThat(logoutResult.statusCode())
-                        .as("Logout с пустым или пробельным типом должен возвращать 400")
-                        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
             }
 
             @ParameterizedTest
@@ -470,10 +440,10 @@ public class AuthControllerTest extends BaseApiTest {
             void logout_sameTokenTwice_shouldReturn401() {
                 String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
 
-                Response firstLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response firstLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
                 assertThat(firstLogout.statusCode()).isEqualTo(HttpStatus.OK.value());
 
-                Response secondLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL);
+                Response secondLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
                 assertThat(secondLogout.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             }
         }
