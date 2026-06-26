@@ -6,11 +6,7 @@ import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
 import com.th3curiosity.studycards.data.SuccessData;
-import com.th3curiosity.studycards.dto.other.AuthResult;
-import com.th3curiosity.studycards.entity.RefreshToken;
-import com.th3curiosity.studycards.entity.User;
 import com.th3curiosity.studycards.utils.AuthUtils;
-import com.th3curiosity.studycards.utils.UserUtils;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
@@ -233,19 +229,19 @@ public class AuthControllerTest extends BaseApiTest {
         return login(username, password).getCookie("refreshToken");
     }
 
+    private void tryRefreshSessionWithRefreshToken(String refreshToken, int statusCode) {
+        given()
+                .spec(requestSpecification)
+                .cookie("refreshToken", refreshToken)
+                .when()
+                .post(Endpoints.REFRESH)
+                .then()
+                .statusCode(statusCode);
+    }
+
     @Nested
     @DisplayName("Тесты для разлогина со всех устройств")
     class LogoutAll {
-
-        private void tryRefreshSessionWithRefreshToken(String refreshToken) {
-            given()
-                    .spec(requestSpecification)
-                    .cookie("refreshToken", refreshToken)
-                    .when()
-                    .post(Endpoints.REFRESH)
-                    .then()
-                    .statusCode(HttpStatus.UNAUTHORIZED.value());
-        }
 
         @Nested
         @DisplayName("Успешный разлогин со всех устройств")
@@ -258,10 +254,8 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                String message = logoutResult.body().asString();
-                assertThat(message)
-                        .as("Должно быть сообщение %s", SuccessData.AuthMessage.SUCCESS_LOGOUT)
-                        .isEqualTo(SuccessData.AuthMessage.SUCCESS_LOGOUT);
+                BaseApiAssertions
+                        .assertTextResponse(logoutResult, HttpStatus.OK.value(), SuccessData.AuthMessage.SUCCESS_LOGOUT);
             }
 
             @ParameterizedTest
@@ -289,7 +283,7 @@ public class AuthControllerTest extends BaseApiTest {
                 assertHeaders(logoutResult);
 
                 for (String refreshToken : refreshTokens) {
-                    tryRefreshSessionWithRefreshToken(refreshToken);
+                    tryRefreshSessionWithRefreshToken(refreshToken, HttpStatus.UNAUTHORIZED.value());
                 }
             }
         }
@@ -305,7 +299,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.UNAUTHORIZED.value(),
                         Error.ServiceMessage.INVALID_REFRESH_TOKEN);
             }
 
@@ -320,10 +314,10 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResponse = logout(expiredRefreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResponse);
-                BaseApiAssertions.assertTextError(logoutResponse, HttpStatus.UNAUTHORIZED.value(),
+                BaseApiAssertions.assertTextResponse(logoutResponse, HttpStatus.UNAUTHORIZED.value(),
                         Error.ServiceMessage.INVALID_REFRESH_TOKEN);
 
-                tryRefreshSessionWithRefreshToken(expiredRefreshToken);
+                tryRefreshSessionWithRefreshToken(expiredRefreshToken, HttpStatus.UNAUTHORIZED.value());
             }
 
             @Test
@@ -333,7 +327,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(null, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -346,7 +340,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(accessToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.UNAUTHORIZED.value(),
                         Error.ServiceMessage.INVALID_REFRESH_TOKEN);
             }
 
@@ -358,7 +352,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -371,7 +365,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -384,7 +378,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -396,7 +390,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, null, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -409,7 +403,7 @@ public class AuthControllerTest extends BaseApiTest {
                 Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_ALL);
 
                 assertHeaders(logoutResult);
-                BaseApiAssertions.assertTextError(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
                         Error.ResponseMessage.BAD_REQUEST);
             }
 
@@ -444,6 +438,196 @@ public class AuthControllerTest extends BaseApiTest {
                 assertThat(firstLogout.statusCode()).isEqualTo(HttpStatus.OK.value());
 
                 Response secondLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_ALL, Endpoints.LOGOUT_ALL);
+                assertThat(secondLogout.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Тесты разлогина на одном устройстве")
+    class LogoutCurrent {
+
+        @Nested
+        @DisplayName("Успешный разлогин на одном устройстве")
+        class LogoutCurrentSuccessful {
+
+            @Test
+            @DisplayName("Успешный разлогин на одном устройстве")
+            void logoutCurrent_SuccessfulLogout() {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions
+                        .assertTextResponse(logoutResult, HttpStatus.OK.value(), SuccessData.AuthMessage.SUCCESS_LOGOUT);
+            }
+
+            @Test
+            @DisplayName("Разлогин на одном устройстве не влияет на другие устройства")
+            void logoutCurrent_SingleLogout_ShouldLogoutOnlyOneToken() {
+                String refreshToken1 = loginAndGetRefreshToken(AuthData.USERNAME_3, AuthData.PASSWORD_3);
+                String refreshToken2 = loginAndGetRefreshToken(AuthData.USERNAME_2, AuthData.PASSWORD_2);
+
+                Response logoutResult = logout(refreshToken1, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                BaseApiAssertions
+                        .assertTextResponse(logoutResult, HttpStatus.OK.value(), SuccessData.AuthMessage.SUCCESS_LOGOUT);
+
+                tryRefreshSessionWithRefreshToken(refreshToken1, HttpStatus.UNAUTHORIZED.value());
+                tryRefreshSessionWithRefreshToken(refreshToken2, HttpStatus.OK.value());
+            }
+        }
+
+        @Nested
+        @DisplayName("Тесты неуспешного разлогина с одного устройства")
+        class LogoutCurrentError {
+
+            @Test
+            @DisplayName("Токен невалиден")
+            void logoutCurrent_InvalidToken_ShouldReturn401() {
+                String refreshToken = "invalid-token";
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
+            }
+
+            @Test
+            @DisplayName("Токен истёк")
+            void logoutCurrent_ExpiredToken_ShouldReturn401() {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                assertThat(refreshToken).isNotBlank();
+
+                String expiredRefreshToken = AuthUtils.generateExpiredToken(AuthData.USERNAME_1);
+
+                Response logoutResponse = logout(expiredRefreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResponse);
+                BaseApiAssertions.assertTextResponse(logoutResponse, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
+
+                tryRefreshSessionWithRefreshToken(expiredRefreshToken, HttpStatus.UNAUTHORIZED.value());
+            }
+
+            @Test
+            @DisplayName("Токен неизвестен (null)")
+            @Disabled("Неучтённость - больше подошла бы ошибка 400")
+            void logoutCurrent_NullRefreshToken_ShouldReturn400() {
+                Response logoutResult = logout(null, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @Test
+            @DisplayName("Передача access token в куки вместо refresh token")
+            void logoutCurrent_AccessTokenInCookie_ShouldReturn401() {
+                String accessToken = AuthUtils.generateAccessToken(AuthData.USERNAME_1);
+                login(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                Response logoutResult = logout(accessToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.UNAUTHORIZED.value(),
+                        Error.ServiceMessage.INVALID_REFRESH_TOKEN);
+            }
+
+            @ParameterizedTest
+            @DisplayName("Токен - пустая строка или пробелы")
+            @ValueSource(strings = {"", " ", "  "})
+            @Disabled("Неучтённость - возвращается 401")
+            void logoutCurrent_EmptyOrBlankRefreshToken(String refreshToken) {
+                Response logoutResult = logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @ParameterizedTest
+            @Disabled("Баг - ответ 200 на неподдерживаемый тип")
+            @DisplayName("Необрабатываемой системой тип разлогина")
+            @ValueSource(strings = {"currentt", "curren", "1234567890", "!@#$"})
+            void logoutCurrent_UnexpectedLogoutType_ShouldReturn400(String logoutType) {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @ParameterizedTest
+            @Disabled("Баг - ответ 200 на тип в другом регистре")
+            @DisplayName("Разный регистр типов разлогина")
+            @ValueSource(strings = {"CurrenT", "cURRENt", "CuRrEnT", "cuRRent"})
+            void logoutCurrent_LogoutTypeDifferentCases_ShouldReturn400(String logoutType) {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @Test
+            @Disabled("Баг - ответ 200 на null тип")
+            @DisplayName("Тип разлогина - null")
+            void logoutCurrent_NullLogoutType_ShouldReturn400() {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Response logoutResult = logout(refreshToken, null, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @ParameterizedTest
+            @Disabled("Баг - ответ 200 на пустой или пробельный тип")
+            @DisplayName("Тип разлогина - пустая строка или пробелы")
+            @ValueSource(strings = {"", " ", "  "})
+            void logoutCurrent_EmptyOrBlankLogoutType_ShouldReturn400(String logoutType) {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                Response logoutResult = logout(refreshToken, logoutType, Endpoints.LOGOUT_CURRENT);
+
+                assertHeaders(logoutResult);
+                BaseApiAssertions.assertTextResponse(logoutResult, HttpStatus.BAD_REQUEST.value(),
+                        Error.ResponseMessage.BAD_REQUEST);
+            }
+
+            @ParameterizedTest
+            @Disabled("Неучтённость - больше подойдёт код 405")
+            @DisplayName("Неподдерживаемые методы")
+            @ValueSource(strings = {"GET", "PATCH", "DELETE", "PUT"})
+            void logoutCurrent_UnexpectedMethod_ShouldReturn405(String wrongMethod) {
+                BaseApiAssertions.assertMethodNotAllowed(requestSpecification, Endpoints.LOGOUT_CURRENT,
+                        wrongMethod, "POST");
+            }
+
+            @Test
+            @DisplayName("Logout без куки")
+            @Disabled("Неучтённость - больше подойдёт ответ 400")
+            void logoutCurrent_withoutCookie_shouldReturn400() {
+                given()
+                        .spec(requestSpecification)
+                        .queryParam("type", SuccessData.LogoutType.LOGOUT_CURRENT)
+                        .when()
+                        .post(Endpoints.LOGOUT_CURRENT)
+                        .then()
+                        .statusCode(HttpStatus.BAD_REQUEST.value());
+            }
+
+            @Test
+            @DisplayName("Logout с тем же токеном")
+            void logoutCurrent_sameTokenTwice_shouldReturn401() {
+                String refreshToken = loginAndGetRefreshToken(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+
+                Response firstLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
+                assertThat(firstLogout.statusCode()).isEqualTo(HttpStatus.OK.value());
+
+                Response secondLogout = logout(refreshToken, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
                 assertThat(secondLogout.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             }
         }
