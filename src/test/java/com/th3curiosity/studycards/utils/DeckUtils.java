@@ -1,6 +1,7 @@
 package com.th3curiosity.studycards.utils;
 
 import com.th3curiosity.studycards.dto.card.CardCreateRequest;
+import com.th3curiosity.studycards.dto.deck.DeckCreateRequest;
 import com.th3curiosity.studycards.dto.deck.DeckResponse;
 import com.th3curiosity.studycards.entity.Card;
 import com.th3curiosity.studycards.entity.Deck;
@@ -65,7 +66,7 @@ public final class DeckUtils {
         return decks;
     }
 
-    private static Deck createDeck(int index, User user) {
+    public static Deck createDeck(int index, User user) {
         Deck deck = new Deck();
         deck.setId((long )index);
         deck.setUser(user);
@@ -86,15 +87,7 @@ public final class DeckUtils {
     public static List<DeckResponse> mapDecksToDeckResponse(List<Deck> decks) {
         if (decks == null || decks.isEmpty()) { return Collections.emptyList(); }
 
-        return decks.stream().map(deck -> {
-            DeckResponse deckResponse = new DeckResponse();
-            deckResponse.setId(deck.getId());
-            deckResponse.setTitle(deck.getTitle());
-            deckResponse.setDescription(deck.getDescription());
-            deckResponse.setCreatedAt(deck.getCreatedAt());
-            deckResponse.setUpdatedAt(deck.getUpdatedAt());
-            return deckResponse;
-        }).toList();
+        return decks.stream().map(deck -> mapToDeckResponse(deck)).toList();
     }
 
     /**
@@ -113,7 +106,7 @@ public final class DeckUtils {
         return deckResponses;
     }
 
-    private static DeckResponse createDeckResponse(int index) {
+    public static DeckResponse createDeckResponse(int index) {
         DeckResponse deckResponse = new DeckResponse();
         deckResponse.setId((long) index);
         deckResponse.setTitle(DECK_TITLE_PREFIX + index);
@@ -140,6 +133,33 @@ public final class DeckUtils {
         }
 
         return cards;
+    }
+
+    public static Deck mapToDeck(DeckCreateRequest deckCreateRequest) {
+        Deck deck = new Deck();
+        deck.setId(1000L);
+        deck.setTitle(deckCreateRequest.getTitle());
+        deck.setDescription(deckCreateRequest.getDescription());
+        deck.setCreatedAt(FIXED_TIME);
+        deck.setUpdatedAt(FIXED_TIME);
+        return deck;
+    }
+
+    public static DeckResponse mapToDeckResponse(Deck deck) {
+        DeckResponse deckResponse = new DeckResponse();
+        deckResponse.setId(deck.getId());
+        deckResponse.setTitle(deck.getTitle());
+        deckResponse.setDescription(deck.getDescription());
+        deckResponse.setCreatedAt(deck.getCreatedAt());
+        deckResponse.setUpdatedAt(deck.getUpdatedAt());
+        return deckResponse;
+    }
+
+    public static DeckCreateRequest createDeckRequest() {
+        DeckCreateRequest deckCreateRequest = new DeckCreateRequest();
+        deckCreateRequest.setTitle(DECK_TITLE_PREFIX);
+        deckCreateRequest.setDescription(DECK_DESCRIPTION_PREFIX);
+        return deckCreateRequest;
     }
 
     /**

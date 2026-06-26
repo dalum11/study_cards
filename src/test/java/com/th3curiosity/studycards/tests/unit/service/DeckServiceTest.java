@@ -3,6 +3,7 @@ package com.th3curiosity.studycards.tests.unit.service;
 import com.th3curiosity.studycards.data.AuthData;
 import com.th3curiosity.studycards.dto.card.CardCreateRequest;
 import com.th3curiosity.studycards.dto.card.CardResponse;
+import com.th3curiosity.studycards.dto.deck.DeckCreateRequest;
 import com.th3curiosity.studycards.dto.deck.DeckResponse;
 import com.th3curiosity.studycards.entity.Card;
 import com.th3curiosity.studycards.entity.Deck;
@@ -15,6 +16,7 @@ import com.th3curiosity.studycards.repository.DeckRepository;
 import com.th3curiosity.studycards.service.DeckService;
 import com.th3curiosity.studycards.service.UserService;
 import com.th3curiosity.studycards.utils.DeckUtils;
+import com.th3curiosity.studycards.utils.TestDataHelper;
 import com.th3curiosity.studycards.utils.UserUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -22,12 +24,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -463,6 +469,328 @@ public class DeckServiceTest {
                 return card;
             });
             when(cardMapper.toCardResponseDTO(card)).thenReturn(expectedCardResponse);
+        }
+    }
+
+    @Nested
+    @DisplayName("Тесты для метода создания колоды")
+    class CreateDeck {
+
+        @Nested
+        @DisplayName("Успешное создание колоды")
+        class CreateDeckSuccessful {
+
+            private void mockCreateDeckSuccessful(User user, Deck deck, DeckResponse expectedDeckResponse) {
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+                when(deckRepository.save(any(Deck.class))).thenReturn(deck);
+                when(deckMapper.toDeckResponseDTO(any(Deck.class))).thenReturn(expectedDeckResponse);
+            }
+
+            private void verifyCreateDeckSuccessful(User user) {
+                verify(userService).findByUsername(user.getUsername());
+                verify(deckRepository).save(any(Deck.class));
+                verify(deckMapper).toDeckResponseDTO(any(Deck.class));
+                verifyNoMoreInteractions(userService, deckRepository, deckMapper);
+            }
+
+            private void assertSuccessfulCreateDeck(DeckResponse actualDeckResponse, String title, String description) {
+                assertThat(actualDeckResponse)
+                        .as("Созданная колода не должна быть null")
+                        .isNotNull();
+
+                assertThat(actualDeckResponse.getId())
+                        .as("Id должен быть положительным числом")
+                        .isNotNull()
+                        .isPositive();
+                assertThat(actualDeckResponse.getTitle())
+                        .as("Название колоды должно быть %s", title)
+                        .isNotBlank()
+                        .isEqualTo(title);
+                assertThat(actualDeckResponse.getDescription())
+                        .as("Описание колоды должно быть %s", description)
+                        .isNotBlank()
+                        .isEqualTo(description);
+                assertThat(actualDeckResponse.getCreatedAt())
+                        .as("Время создания колоды не может быть пустым")
+                        .isNotNull();
+                assertThat(actualDeckResponse.getUpdatedAt())
+                        .as("Время обновления колоды не может быть пустым")
+                        .isNotNull();
+            }
+
+            @Test
+            @DisplayName("Успешное создание одной колоды")
+            void createDeck_CreateSuccessful() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                Deck deck = DeckUtils.mapToDeck(request);
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+
+                mockCreateDeckSuccessful(user, deck, expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertSuccessfulCreateDeck(actualDeckResponse, request.getTitle(), request.getDescription());
+                verifyCreateDeckSuccessful(user);
+            }
+
+            @ParameterizedTest
+            @DisplayName("Создание колоды с названием валидной длины")
+            @ValueSource(ints = {1, 2, 254, 255})
+            void createDeck_ValidTitleLength_CreateSuccessful(int titleSymbolsCount) {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                String title = TestDataHelper.generateRandomString(titleSymbolsCount);
+                request.setTitle(title);
+                Deck deck = DeckUtils.mapToDeck(request);
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+
+                mockCreateDeckSuccessful(user, deck, expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertSuccessfulCreateDeck(actualDeckResponse, request.getTitle(), request.getDescription());
+                verifyCreateDeckSuccessful(user);
+            }
+
+            @ParameterizedTest
+            @Disabled("Баг - некорректно отображается название с последовательностью Escape-символов")
+            @DisplayName("Название и описание колоды со спецсимволами")
+            @CsvSource({
+                    "'!@#$%^&*()', 'Special characters in title'",
+                    "'<script>alert(1)</script>', 'XSS attempt in title'",
+                    "'\n\r\t', 'Escape sequences in title'",
+                    "'Русский заголовок', 'Описание на русском'",
+                    "'中文標題', '中文描述'",
+                    "'标题', '描述'"
+            })
+            void createDeck_SpecialCharactersInTitleAndDescription_ShouldCreateSuccessfully(String title, String description) {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                request.setTitle(title);
+                request.setDescription(description);
+                Deck deck = DeckUtils.mapToDeck(request);
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+
+                mockCreateDeckSuccessful(user, deck, expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertSuccessfulCreateDeck(actualDeckResponse, request.getTitle(), request.getDescription());
+                verifyCreateDeckSuccessful(user);
+            }
+
+            @Test
+            @DisplayName("Проверка присвоения времени создания и обновления колоды")
+            void createDeck_CreatedAtAndUpdatedAt_ShouldBeSetAutomatically() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                Deck deck = new Deck(user, request.getTitle(), request.getDescription());
+                LocalDateTime currentTime = LocalDateTime.now();
+
+                assertThat(deck.getCreatedAt())
+                        .as("CreatedAt должен быть null")
+                        .isNull();
+                assertThat(deck.getUpdatedAt())
+                        .as("UpdatedAt должен быть null")
+                        .isNull();
+
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+                expectedDeckResponse.setId(1L);
+                expectedDeckResponse.setUpdatedAt(currentTime);
+                expectedDeckResponse.setCreatedAt(currentTime);
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+                when(deckRepository.save(any(Deck.class))).thenAnswer(invocation -> {
+                    Deck savedDeck = invocation.getArgument(0);
+                    savedDeck.setId(1L);
+                    savedDeck.setCreatedAt(currentTime);
+                    savedDeck.setUpdatedAt(currentTime);
+                    return savedDeck;
+                });
+                when(deckMapper.toDeckResponseDTO(any(Deck.class))).thenReturn(expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertSuccessfulCreateDeck(actualDeckResponse, request.getTitle(), request.getDescription());
+                verifyCreateDeckSuccessful(user);
+            }
+
+            @Test
+            @DisplayName("Создание колоды с уже существующими названием и описанием")
+            void createDeck_DeckWithSameData_ShouldCreateSuccessful() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+
+                Deck deck1 = DeckUtils.mapToDeck(request);
+                deck1.setId(1L);
+                Deck deck2 = DeckUtils.mapToDeck(request);
+                deck2.setId(2L);
+
+                DeckResponse deckResponse1 = DeckUtils.mapToDeckResponse(deck1);
+                DeckResponse deckResponse2 = DeckUtils.mapToDeckResponse(deck2);
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+                when(deckRepository.save(any(Deck.class))).thenReturn(deck1, deck2);
+                when(deckMapper.toDeckResponseDTO(any(Deck.class))).thenReturn(deckResponse1, deckResponse2);
+
+                DeckResponse actualDeckResponse1 = deckService.createDeck(request, user.getUsername());
+
+                assertThat(actualDeckResponse1)
+                        .as("Первый ответ должен прийти")
+                        .isNotNull();
+
+                DeckResponse actualDeckResponse2 = deckService.createDeck(request, user.getUsername());
+
+                assertThat(actualDeckResponse2)
+                        .as("Второй ответ должен прийти")
+                        .isNotNull();
+
+                assertThat(actualDeckResponse1.getTitle())
+                        .as("Название всех колод должно быть %s", request.getTitle())
+                        .isEqualTo(actualDeckResponse2.getTitle())
+                        .isEqualTo(deckResponse1.getTitle())
+                        .isEqualTo(deckResponse2.getTitle());
+
+                assertThat(actualDeckResponse1.getDescription())
+                        .as("Описание всех колод должно быть %s", request.getDescription())
+                        .isEqualTo(actualDeckResponse2.getDescription())
+                        .isEqualTo(deckResponse1.getDescription())
+                        .isEqualTo(deckResponse2.getDescription());
+
+                assertThat(actualDeckResponse1.getId())
+                        .as("Id созданных колод должны отличаться")
+                        .isNotEqualTo(actualDeckResponse2.getId());
+
+                verify(userService, times(2)).findByUsername(user.getUsername());
+                verify(deckRepository, times(2)).save(any(Deck.class));
+                verify(deckMapper, times(2)).toDeckResponseDTO(any(Deck.class));
+                verifyNoMoreInteractions(userService, deckRepository, deckMapper);
+            }
+
+            @Test
+            @DisplayName("Пустое описание колоды")
+            void createDeck_DeckWithoutDescription_ShouldCreateSuccessful() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                Deck deck = DeckUtils.mapToDeck(request);
+                deck.setDescription(null);
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+
+                mockCreateDeckSuccessful(user, deck, expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertThat(actualDeckResponse)
+                        .isNotNull();
+
+                assertThat(actualDeckResponse.getDescription()).isNull();
+                assertThat(actualDeckResponse.getTitle()).isEqualTo(expectedDeckResponse.getTitle());
+                verifyCreateDeckSuccessful(user);
+            }
+
+            @ParameterizedTest
+            @DisplayName("Поиск по имени пользователя валидной длины")
+            @ValueSource(ints = {1, 2, 254, 255})
+            void createDeck_UsernameValidLength_ShouldCreateSuccessful(int usernameLength) {
+                String username = TestDataHelper.generateRandomString(usernameLength);
+                User user = UserUtils.createBaseUser(username, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                Deck deck = DeckUtils.mapToDeck(request);
+                DeckResponse expectedDeckResponse = DeckUtils.mapToDeckResponse(deck);
+
+                mockCreateDeckSuccessful(user, deck, expectedDeckResponse);
+
+                DeckResponse actualDeckResponse = deckService.createDeck(request, user.getUsername());
+
+                assertThat(actualDeckResponse)
+                        .as("Ответ должен прийти")
+                        .isNotNull();
+
+                assertThat(actualDeckResponse.getTitle())
+                        .as("Название колоды должно быть %s", request.getTitle())
+                        .isEqualTo(expectedDeckResponse.getTitle());
+                verifyCreateDeckSuccessful(user);
+            }
+        }
+
+        @Nested
+        @DisplayName("Тесты создания колоды сошибкой")
+        class CreateDeckError {
+
+            @Test
+            @DisplayName("Создание колоды несуществующего пользователя")
+            void createDeck_NotExistingUser_ShouldThrowException() {
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+
+                when(userService.findByUsername(anyString())).thenAnswer(invocationOnMock -> {
+                    throw new UsernameNotFoundException("User not found with username: " + AuthData.USERNAME_2);
+                });
+
+                assertThatThrownBy(() -> deckService.createDeck(request, AuthData.USERNAME_2))
+                        .as("Должно быть брошено исключение UsernameNotFoundException")
+                        .isInstanceOf(UsernameNotFoundException.class)
+                        .hasMessageContaining(AuthData.USERNAME_2);
+            }
+
+            @Test
+            @Disabled("Неучтённость - нет валидации DeckCreateRequest")
+            @DisplayName("Пустой запрос для создания колоды")
+            void createDeck_EmptyDeckCreateRequest_ShouldThrowException() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest deckCreateRequest = new DeckCreateRequest();
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+
+                assertIllegalArgumentException(deckCreateRequest, user.getUsername());
+            }
+
+            @ParameterizedTest
+            @DisplayName("Заголовок пустой или из пробелов")
+            @ValueSource(strings = {"", " ", "  "})
+            @Disabled("Неучтённость - нет валидации DeckCreateRequest.title")
+            void createDeck_EmptyOrBlankDeckTitle_ShouldThrowException(String title) {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest deckCreateRequest = DeckUtils.createDeckRequest();
+                deckCreateRequest.setTitle(title);
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+
+                assertIllegalArgumentException(deckCreateRequest, user.getUsername());
+            }
+
+            @Test
+            @DisplayName("Заголовок - null")
+            @Disabled("Неучтённость - нет валидации DeckCreateRequest.title")
+            void createDeck_NullDeckCreateRequestTitle_ShouldThrowException() {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest deckCreateRequest = DeckUtils.createDeckRequest();
+                deckCreateRequest.setTitle(null);
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+
+                assertIllegalArgumentException(deckCreateRequest, user.getUsername());
+            }
+
+            @ParameterizedTest
+            @DisplayName("Создание колоды со слишком длинным названием")
+            @Disabled("Неучтённость - не учитываются ограничения на уровне БД")
+            @ValueSource(ints = {256, 257})
+            void createDeck_TitleTooLong_ShouldThrowException(int titleLength) {
+                User user = UserUtils.createBaseUser(AuthData.USERNAME_1, AuthData.PASSWORD_1);
+                DeckCreateRequest request = DeckUtils.createDeckRequest();
+                request.setTitle(TestDataHelper.generateRandomString(titleLength));
+
+                when(userService.findByUsername(user.getUsername())).thenReturn(user);
+
+                assertIllegalArgumentException(request, user.getUsername());
+            }
+
+            private void assertIllegalArgumentException(DeckCreateRequest request, String username) {
+                assertThatThrownBy(() -> deckService.createDeck(request, username))
+                        .as("Должно быть брошено исключение IllegalArgumentException")
+                        .isInstanceOf(IllegalArgumentException.class);
+            }
         }
     }
 }
