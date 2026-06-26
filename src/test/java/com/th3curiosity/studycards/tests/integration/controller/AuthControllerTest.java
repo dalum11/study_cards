@@ -465,8 +465,8 @@ public class AuthControllerTest extends BaseApiTest {
             @Test
             @DisplayName("Разлогин на одном устройстве не влияет на другие устройства")
             void logoutCurrent_SingleLogout_ShouldLogoutOnlyOneToken() {
-                String refreshToken1 = loginAndGetRefreshToken(AuthData.USERNAME_3, AuthData.PASSWORD_3);
-                String refreshToken2 = loginAndGetRefreshToken(AuthData.USERNAME_2, AuthData.PASSWORD_2);
+                String refreshToken1 = loginAndGetRefreshToken(AuthData.USERNAME_2, AuthData.PASSWORD_2);
+                String refreshToken2 = loginAndGetRefreshToken(AuthData.USERNAME_3, AuthData.PASSWORD_3);
 
                 Response logoutResult = logout(refreshToken1, SuccessData.LogoutType.LOGOUT_CURRENT, Endpoints.LOGOUT_CURRENT);
 
