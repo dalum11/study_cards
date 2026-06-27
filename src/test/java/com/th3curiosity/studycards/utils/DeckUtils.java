@@ -66,6 +66,13 @@ public final class DeckUtils {
         return decks;
     }
 
+    /**
+     * Метод создаёт пустую колоду и задаёт её id по индексу
+     *
+     * @param index номер колоды пользователя
+     * @param user пользователь, которому принадлежит колода
+     * @return колоду
+     */
     public static Deck createDeck(int index, User user) {
         Deck deck = new Deck();
         deck.setId((long )index);
@@ -106,6 +113,12 @@ public final class DeckUtils {
         return deckResponses;
     }
 
+    /**
+     * Метод создаёт DTO для успешного ответа создания колоды
+     *
+     * @param index номер колоды пользователя
+     * @return успешный ответ создания колоды
+     */
     public static DeckResponse createDeckResponse(int index) {
         DeckResponse deckResponse = new DeckResponse();
         deckResponse.setId((long) index);
@@ -135,6 +148,12 @@ public final class DeckUtils {
         return cards;
     }
 
+    /**
+     * Метод переносит все поля запроса создания колоды для entity колоды
+     *
+     * @param deckCreateRequest запрос для создания колоды
+     * @return entity колоды
+     */
     public static Deck mapToDeck(DeckCreateRequest deckCreateRequest) {
         Deck deck = new Deck();
         deck.setId(1000L);
@@ -145,6 +164,12 @@ public final class DeckUtils {
         return deck;
     }
 
+    /**
+     * Метод переносит все поля сущности колоды в DTO ответа при её создании
+     *
+     * @param deck entity колоды
+     * @return ответ на успешное создание колоды
+     */
     public static DeckResponse mapToDeckResponse(Deck deck) {
         DeckResponse deckResponse = new DeckResponse();
         deckResponse.setId(deck.getId());
@@ -155,6 +180,11 @@ public final class DeckUtils {
         return deckResponse;
     }
 
+    /**
+     * Метод создаёт DTO для создания колоды с заранее заданными параметрами
+     *
+     * @return DTO для создания колоды
+     */
     public static DeckCreateRequest createDeckRequest() {
         DeckCreateRequest deckCreateRequest = new DeckCreateRequest();
         deckCreateRequest.setTitle(DECK_TITLE_PREFIX);
@@ -178,6 +208,13 @@ public final class DeckUtils {
         return card;
     }
 
+    /**
+     * Метод для быстрого создания DTO для запроса создания новой карточки
+     *
+     * @param front вопрос
+     * @param back ответ
+     * @return DTO для запроса создания новой карточки
+     */
     public static CardCreateRequest createCardCreateRequest(String front, String back) {
         CardCreateRequest cardCreateRequest = new CardCreateRequest();
         cardCreateRequest.setFront(front);
