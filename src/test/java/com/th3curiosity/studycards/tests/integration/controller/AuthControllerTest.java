@@ -7,7 +7,6 @@ import com.th3curiosity.studycards.data.Endpoints;
 import com.th3curiosity.studycards.data.Error;
 import com.th3curiosity.studycards.data.SuccessData;
 import com.th3curiosity.studycards.utils.AuthUtils;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;

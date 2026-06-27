@@ -80,6 +80,12 @@ public class UserUtils {
         return user;
     }
 
+    /**
+     * Приватный метод для валидации данных создания пользователя
+     *
+     * @param username email пользователя (непустое и не null)
+     * @param password пароль (непустой и не null)
+     */
     private static void validateUserData(String username, String password) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             throw new IllegalArgumentException("Почта и пароль пользователя не могут быть пустыми/null");
